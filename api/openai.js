@@ -46,12 +46,15 @@ Use the provided knowledge base context when answering.`
 
     const rawContent = response?.data?.choices?.[0]?.message?.content || ''
 
-    // Try parsing JSON, fallback to plain text if parsing fails
+    // Try parsing JSON, fallback to structured wrapper
     let parsedContent
     try {
       parsedContent = JSON.parse(rawContent)
     } catch {
-      parsedContent = { text: rawContent }
+      parsedContent = {
+        title: 'Explanation',
+        sections: [{ heading: 'Answer', content: rawContent }],
+      }
     }
 
     res.status(200).json({ result: parsedContent })
