@@ -8,9 +8,26 @@ export default async function handler(req, res) {
 
   try {
     const { prompt, kb } = req.body
-    const system = `You are a Grade 11 tutor. Use the provided knowledge base context when answering. Keep explanations stepwise and friendly.`
+
+    // System prompt: instruct AI to return structured JSON
+    const system = `You are a Grade 11 physics tutor. 
+Answer questions in a structured, step-by-step format:
+- Provide a title
+- Use numbered steps or sections
+- Use headings for each concept
+- Keep each step concise
+- Return the response in JSON format like:
+{
+  "title": "<topic>",
+  "sections": [
+    { "heading": "<heading>", "content": "<explanation>" }
+  ]
+}
+Use the provided knowledge base context when answering.`
+
     const context = Array.isArray(kb?.meta) ? kb.meta.join('\n') : ''
 
+    // Call OpenAI API
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -27,8 +44,17 @@ export default async function handler(req, res) {
       }
     )
 
-    const content = response?.data?.choices?.[0]?.message?.content || ''
-    res.status(200).json({ result: content })
+    const rawContent = response?.data?.choices?.[0]?.message?.content || ''
+
+    // Try parsing JSON, fallback to plain text if parsing fails
+    let parsedContent
+    try {
+      parsedContent = JSON.parse(rawContent)
+    } catch {
+      parsedContent = { text: rawContent }
+    }
+
+    res.status(200).json({ result: parsedContent })
   } catch (err) {
     console.error('OpenAI API error:', err?.response?.data || err.message || err)
     res.status(500).json({ error: 'Failed to fetch explanation.' })
