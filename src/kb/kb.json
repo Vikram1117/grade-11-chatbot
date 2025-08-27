@@ -1,0 +1,17 @@
+{
+  "meta": [
+    "CK-12 Physics FlexBook: core topics for high school physics (mechanics, waves, electricity). Source: https://flexbooks.ck12.org/cbook/ck-12-physics-flexbook-2.0/",
+    "CK-12 Chemistry FlexBook: foundational chemistry topics (atoms, bonding, reactions). Source: https://flexbooks.ck12.org/cbook/ck-12-chemistry-flexbook-2.0/",
+    "EPISD Economics with Emphasis on the Free Enterprise System: economics concepts for high school. Source: https://flexbooks.ck12.org/user:zxbpc2rzcziwmthaz21hawwuy29t/cbook/episd-2019-2020-economics-with-emphasis-on-the-free-enterprise-system/"
+  ],
+  "formulas": {
+    "physics": [
+      { "id": "newton2", "latex": "a = (v - v_0)/t", "note": "constant acceleration" },
+      { "id": "kinetic", "latex": "KE = 1/2 m v^2", "note": "kinetic energy" }
+    ],
+    "chemistry": [
+      { "id": "ideal", "latex": "PV = nRT", "note": "Ideal gas law" }
+    ]
+  },
+  "faq": [ { "q": "What is Newton's second law?", "a": "Net force equals mass times acceleration: F = ma." } ]
+}

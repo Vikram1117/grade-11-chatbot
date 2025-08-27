@@ -1,0 +1,17 @@
+{
+  "title": "Physics quick check",
+  "questions": [
+    {
+      "question": "A car accelerates from 0 to 20 m/s in 4 s. What is its acceleration?",
+      "options": ["5 m/s^2","10 m/s^2","4 m/s^2","0.2 m/s^2"],
+      "answer": 0,
+      "explanation": "a = (v - v0)/t = (20 - 0)/4 = 5 m/s^2."
+    },
+    {
+      "question": "Which is a scalar quantity?",
+      "options": ["Velocity","Displacement","Speed","Acceleration"],
+      "answer": 2,
+      "explanation": "Speed is scalar."
+    }
+  ]
+}
