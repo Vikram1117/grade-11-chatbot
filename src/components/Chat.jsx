@@ -1,36 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react'
-import RuleNLU from './nlu'
+import React, { useState, useRef } from 'react'
+import RuleNLU from '../nlu/RuleNLU'   // if you put it in src/nlu
 import Solver from './solver'
 import axios from 'axios'
 
 export default function Chat({ kb }) {
-  const [messages, setMessages] = useState(() => {
-    const s = localStorage.getItem('g11:chat')
-    return s
-      ? JSON.parse(s)
-      : [
+  const [messages, setMessages] = useState([
+    {
+      role: 'bot',
+      text: {
+        title: 'Welcome',
+        sections: [
           {
-            role: 'bot',
-            text: {
-              title: 'Welcome',
-              sections: [
-                {
-                  heading: 'Intro',
-                  content:
-                    "Hi! I'm your Grade 11 Tutor. Ask about theory, solve problems, or take a quiz.",
-                },
-              ],
-            },
+            heading: 'Intro',
+            content:
+              "Hi! I'm your Grade 11 Tutor. Ask about theory, solve problems, or take a quiz.",
           },
-        ]
-  })
+        ],
+      },
+    },
+  ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [quizCount, setQuizCount] = useState(5)
   const inputRef = useRef(null)
-
-  useEffect(() => {
-    localStorage.setItem('g11:chat', JSON.stringify(messages))
-  }, [messages])
 
   const send = async () => {
     if (!input.trim()) return
@@ -53,10 +45,39 @@ export default function Chat({ kb }) {
       ])
       const steps = Solver.solveStaged(input)
       for (const s of steps) {
-        await new Promise((r) => setTimeout(r, 250)) // small delay
+        await new Promise((r) => setTimeout(r, 250))
         setMessages((m) => [
           ...m,
           { role: 'bot', text: { title: 'Step', sections: [{ heading: 'Step', content: s }] } },
+        ])
+      }
+      return
+    }
+
+    if (intent === 'quick_quiz') {
+      setMessages((m) => [
+        ...m,
+        { role: 'bot', text: { title: 'Quiz', sections: [{ heading: 'Info', content: 'Generating your quiz...' }] } },
+      ])
+
+      try {
+        const resp = await axios.post('/api/openai', {
+          prompt: `Generate ${quizCount} multiple-choice quiz questions for Grade 11 physics. 
+Return in JSON with title and sections. Each section should be one question with 4 options labeled A-D. Do not include answers.`,
+          kb,
+        })
+        setMessages((m) => [...m, { role: 'bot', text: resp.data.result }])
+      } catch (err) {
+        console.error('quiz error', err)
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'bot',
+            text: {
+              title: 'Error',
+              sections: [{ heading: 'Issue', content: 'Sorry, I could not generate the quiz.' }],
+            },
+          },
         ])
       }
       return
@@ -74,7 +95,9 @@ export default function Chat({ kb }) {
           role: 'bot',
           text: {
             title: 'Error',
-            sections: [{ heading: 'Issue', content: 'Sorry, something went wrong contacting the explanation engine.' }],
+            sections: [
+              { heading: 'Issue', content: 'Sorry, something went wrong contacting the explanation engine.' },
+            ],
           },
         },
       ])
@@ -85,6 +108,39 @@ export default function Chat({ kb }) {
 
   return (
     <div className="border rounded-xl p-4 flex flex-col gap-3">
+      <div className="flex justify-between items-center mb-2">
+        <div>
+          <label className="text-sm mr-2">Number of quiz questions:</label>
+          <input
+            type="number"
+            value={quizCount}
+            onChange={(e) => setQuizCount(Math.max(1, Number(e.target.value)))}
+            className="border p-1 rounded w-16 text-sm"
+          />
+        </div>
+        <button
+          onClick={() => {
+            setMessages([
+              {
+                role: 'bot',
+                text: {
+                  title: 'Welcome',
+                  sections: [
+                    {
+                      heading: 'Intro',
+                      content: "Hi! I'm your Grade 11 Tutor. Ask about theory, solve problems, or take a quiz.",
+                    },
+                  ],
+                },
+              },
+            ])
+          }}
+          className="text-xs text-blue-500 underline"
+        >
+          New Chat
+        </button>
+      </div>
+
       <div className="h-72 overflow-auto p-2 bg-slate-50 rounded">
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
@@ -112,16 +168,14 @@ export default function Chat({ kb }) {
         ))}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-2">
         <input
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           className="flex-1 p-2 border rounded"
-          placeholder={
-            'Ask: e.g. "Explain Newton\'s second law" or "A car accelerates from 0 to 20 m/s in 4 s, find acceleration"'
-          }
+          placeholder={'Ask: e.g. "Explain Newton\'s second law" or "Quick quiz on waves"'}
         />
         <button
           onClick={send}
@@ -132,8 +186,8 @@ export default function Chat({ kb }) {
         </button>
       </div>
 
-      <div className="text-xs text-slate-400">
-        Intents: theory | numeric | quiz | summary | formula | faq — rule-based NLU active.
+      <div className="text-xs text-slate-400 mt-1">
+        Intents: theory | numeric | quiz | quick_quiz | summary | formula | faq
       </div>
     </div>
   )

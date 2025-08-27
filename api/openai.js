@@ -9,25 +9,23 @@ export default async function handler(req, res) {
   try {
     const { prompt, kb } = req.body
 
-    // System prompt: instruct AI to return structured JSON
-    const system = `You are a Grade 11 physics tutor. 
-Answer questions in a structured, step-by-step format:
-- Provide a title
-- Use numbered steps or sections
-- Use headings for each concept
-- Keep each step concise
-- Return the response in JSON format like:
+    const system = `You are a Grade 11 physics tutor.
+You can:
+- Explain concepts in structured JSON (title + sections)
+- Generate multiple-choice quizzes
+
+Return JSON always like:
 {
   "title": "<topic>",
   "sections": [
-    { "heading": "<heading>", "content": "<explanation>" }
+    { "heading": "<heading>", "content": "<text or question>" }
   ]
 }
-Use the provided knowledge base context when answering.`
+
+Use the knowledge base if helpful.`
 
     const context = Array.isArray(kb?.meta) ? kb.meta.join('\n') : ''
 
-    // Call OpenAI API
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -36,8 +34,8 @@ Use the provided knowledge base context when answering.`
           { role: 'system', content: system + '\nKnowledgeBase:\n' + context },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.2,
-        max_tokens: 700,
+        temperature: 0.3,
+        max_tokens: 800,
       },
       {
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
@@ -46,13 +44,12 @@ Use the provided knowledge base context when answering.`
 
     const rawContent = response?.data?.choices?.[0]?.message?.content || ''
 
-    // Try parsing JSON, fallback to structured wrapper
     let parsedContent
     try {
       parsedContent = JSON.parse(rawContent)
     } catch {
       parsedContent = {
-        title: 'Explanation',
+        title: 'Response',
         sections: [{ heading: 'Answer', content: rawContent }],
       }
     }
